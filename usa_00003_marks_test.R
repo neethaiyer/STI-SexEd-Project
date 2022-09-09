@@ -5,6 +5,8 @@
 # Then install ipumsr with
 # install.packages("ipumsr")
 
+## Edit 1
+
 library(ipumsr)
 
 # Extract usa_00003.dat from usa_00003.dat.zip manually on local machine with
