@@ -2,10 +2,8 @@
 # Install the dependent libraries for ipumsr with:
 # library(gtools)
 # install.packages(getDependencies("ipumsr"))
-# Then install ipumsr with
+# Then install ipumsr with:
 # install.packages("ipumsr")
-
-## Edit 1
 
 library(ipumsr)
 
@@ -42,4 +40,32 @@ d <- merge(d, state.names, by = "STATEICP")
 d$AGEWT <- d$AGE * d$PERWT / d$STATESIZE
 # Calculate average age by state using aggregate. 
 avage.by.state <- aggregate(AGEWT ~ STATENAME, FUN = "sum", data = d) 
+
+# EXPERIMENT 2: Recode nominal variable RACE for use as a covariate.
+
+# Obtain the named races from the integer codes.  
+race.names <- data.frame(RACE = attr(d$RACE, which = "labels"))
+# Make the names a column of race.names. 
+race.names$RACENAME <- rownames(race.names) 
+# Merge with d to incorporate race names there. 
+d <- merge(d, race.names, by = "RACE")   
+
+# Create binary variable for RACE: non-white = 1, white = 0. 
+d$NONWHITE <- ifelse(d$RACENAME != "White", 1, 0)
+# Binary non-white, weighted by the person-weight. 
+d$NONWHITEWT <- d$NONWHITE * d$PERWT
+
+# Aggregate to get state-level numbers of non-white persons. 
+nonwhite.by.state <- aggregate(NONWHITEWT ~ STATENAME + STATEICP, FUN = "sum", data = d) 
+# Merge with perwt.summed to include state population sizes. 
+nonwhite.by.state <- merge(nonwhite.by.state, perwt.summed, by = "STATEICP") 
+# Calculate nonwhite:white ratio. 
+nonwhite.by.state$NONWHITE.RATIO <- nonwhite.by.state$NONWHITEWT / 
+	(nonwhite.by.state$STATESIZE - nonwhite.by.state$NONWHITEWT)
+
+# Graphical check of log ratios, for scaling anomalies. 
+plot(density(log(nonwhite.by.state$NONWHITE.RATIO)), 
+	xlab = "nonwhite : white ratio (log scale)", ylab = "",
+	main = "Distribution of state-level nonwhite : white ratios")
+	 	
 
